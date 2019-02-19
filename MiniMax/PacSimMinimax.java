@@ -285,12 +285,15 @@ public class PacSimMinimax implements PacAction {
             maze.ghostStateList.add(new State(g, GHOST));        
         }
     }
-
+ 
+    // Evaluating method 
     private PacFace ClosestGhost(Point point){
         PacFace output = PacFace.E;
+        // Wouldn't the case always be true for the condition based on it being INT_MAX
         double dist = TOP;
+     
         for(Point g : ghosts) {
-            if(PacUtils.euclideanDistance(point, g) < dist){
+            if(PacUtils.manhattanDistance(point, g) < dist){
                 output = PacUtils.direction(point, g);
             }
         }
