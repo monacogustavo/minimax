@@ -113,7 +113,9 @@ public class PacSimMinimax implements PacAction {
 
         return closestDistance;
     }
-    
+	
+	// TODO: Need to re-work minimax so that it accounts for depth looking forward. 
+    /*
     // Utility function for miniMax()
     static int log2(int n) {
     	return (n == 1) ? 0 : 1 + log2(n/2);
@@ -137,7 +139,7 @@ public class PacSimMinimax implements PacAction {
     			miniMax(depth + 1, index * 2 + 1, true, scores, h));
     	}
     }
-
+    */
     // Distance of closest food pellet
     public int closestPellet(PacCell[][] grid, PacmanCell pc) {
 
