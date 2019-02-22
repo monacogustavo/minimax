@@ -78,22 +78,20 @@ public class PacSimMinimax implements PacAction {
         if (pc == null)
             return null;
 
-		// TODO: Testing
-		/*
-		int ghostDistance = closestGhost(grid, pc);
-		// Let's pass this initalized to evaluation function
 
-			int testing = closestPellet(grid, pc);
-		System.out.println("The closest pellet is: " + testing);
-	
-	
-		Point testPt = pc.getLoc();
-		int y = testPt.y + 1;
-		System.out.println("The Y value is: " + y);
-		*/
-		
+        // Testing function
+        evaluation(grid, pc, inputDepth);
+        newFace = newFace.S;
+
 		return newFace;
 	}
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	//			METHODS
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 
     // Method returns integer distance of closest ghost
     public int closestGhost(PacCell[][] grid, PacmanCell pc) {
@@ -113,33 +111,7 @@ public class PacSimMinimax implements PacAction {
 
         return closestDistance;
     }
-	
-	// TODO: Need to re-work minimax so that it accounts for depth looking forward. 
-    /*
-    // Utility function for miniMax()
-    static int log2(int n) {
-    	return (n == 1) ? 0 : 1 + log2(n/2);
-    }
-
-    // Returns the desired value from PacMan using minimax 
-    static int miniMax(int depth, int index, boolean isMax, int scores[], int h) {
-
-    	// Base case
-    	if (depth == h) {
-    		return scores[index];
-    	}
-
-    	if (isMax) {
-    		return Math.max(miniMax(depth + 1, index * 2, false, scores, h), 
-    			miniMax(depth + 1, index * 2 + 1, false, scores, h));
-    	}
-
-    	else {
-    		return Math.min(miniMax(depth + 1, index * 2, true, scores, h), 
-    			miniMax(depth + 1, index * 2 + 1, true, scores, h));
-    	}
-    }
-    */
+    
     // Distance of closest food pellet
     public int closestPellet(PacCell[][] grid, PacmanCell pc) {
 
@@ -153,5 +125,36 @@ public class PacSimMinimax implements PacAction {
     	int distance = BFSPath.getPath(grid, food, pacMan).size();
 
     	return distance;
+    }
+
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    //			UNDER CONSTRUCTION
+
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    // NOTE: Anything beyond this point might be foobar. Proceed with caution! 
+
+
+    // TODO: Test this function
+    // Evaluate function for PacMan locations during each action() update. 
+    public void evaluation(PacCell[][] grid, PacmanCell pc, int depth) {
+
+    	// Set-up temp PacCell with PacMan's current location
+    	int tempY = pc.getY();
+    	int tempX = pc.getX();
+
+    	// Temps for functionality
+    	int tempDepth = depth;
+    	PacCell tempPac = grid[tempX][tempY + 1];
+
+    	// Do a N,E,S,& W evaluation
+    	if (!(tempPac instanceof WallCell)) {
+    		System.out.println("Not a wall");
+    	}
+
+    	if (tempPac instanceof WallCell) {
+    		System.out.println("Oh shit!!!! A WALL!!!!!");
+    	}
     }
 }
