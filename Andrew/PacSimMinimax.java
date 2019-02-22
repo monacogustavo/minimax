@@ -186,6 +186,10 @@ public class PacSimMinimax implements PacAction {
             // Update: Get gext level depth 
             tempDepth--;
 
+            for (int value : directionValue) {
+                System.out.println("This value is " + value);
+            }
+            System.out.println();
 
             // TODO: Do something or pass ArrayList into miniMax()
         }
@@ -196,16 +200,19 @@ public class PacSimMinimax implements PacAction {
     // Utility function for evaluation(): Assigns values to each N,E,S,W direction
     public int assignValues(PacCell lookDirection) {
 
+        // Account for walls and house cells for the same value - You shall not pass!
         if (lookDirection instanceof WallCell || lookDirection instanceof HouseCell)
             return -1;
 
+        // Account for food and power as the same weight
         if (lookDirection instanceof FoodCell || lookDirection instanceof PowerCell)
             return 1;
 
+        // Stranger danger!
         if (lookDirection instanceof GhostCell)
             return -100;
 
-        // The case where it's empty. 
+        // The case where it's and empty cell. 
         else
             return 0;
     }
