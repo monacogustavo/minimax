@@ -14,6 +14,8 @@ import pacsim.GhostCell;
 import pacsim.WallCell;
 import pacsim.PacMode;
 import pacsim.HouseCell;
+import pacsim.PowerCell;
+import pacsim.FoodCell;
 
 public class PacSimMinimax implements PacAction {
 
@@ -81,7 +83,7 @@ public class PacSimMinimax implements PacAction {
 
         // Testing function
         evaluation(grid, pc, inputDepth);
-        newFace = newFace.S;
+   
 
 		return newFace;
 	}
@@ -136,7 +138,6 @@ public class PacSimMinimax implements PacAction {
     // NOTE: Anything beyond this point might be foobar. Proceed with caution! 
 
 
-    // TODO: Test this function
     // Evaluate function for PacMan locations during each action() update. 
     public void evaluation(PacCell[][] grid, PacmanCell pc, int depth) {
 
@@ -146,15 +147,66 @@ public class PacSimMinimax implements PacAction {
 
     	// Temps for functionality
     	int tempDepth = depth;
-    	PacCell tempPac = grid[tempX][tempY + 1];
+    	
 
-    	// Do a N,E,S,& W evaluation
-    	if (!(tempPac instanceof WallCell)) {
-    		System.out.println("Not a wall");
-    	}
+        while (tempDepth != 0) {
 
-    	if (tempPac instanceof WallCell) {
-    		System.out.println("Oh shit!!!! A WALL!!!!!");
-    	}
+            // Reset for each pass
+            ArrayList<Integer> directionValue = new ArrayList<Integer>();
+
+            // Evaluate: N,E,S,W
+
+            // Looking north
+            PacCell lookNorth = grid[tempX - tempDepth][tempY];
+            // Add north value
+            int north = assignValues(lookNorth);
+            directionValue.add(north);
+            
+
+            // Looking east
+            PacCell lookEast = grid[tempX][tempY + tempDepth];
+            // Add east value
+            int east = assignValues(lookEast);
+            directionValue.add(east);
+         
+            // Looking south
+            PacCell lookSouth = grid[tempX + tempDepth][tempY];
+             // Add south value
+            int south = assignValues(lookSouth);
+            directionValue.add(south);
+
+        
+            // Looking west
+            PacCell lookWest = grid[tempX][tempY - tempDepth];
+            // Add west value
+            int west = assignValues(lookWest);
+            directionValue.add(west);
+
+
+            // Update: Get gext level depth 
+            tempDepth--;
+
+
+            // TODO: Do something or pass ArrayList into miniMax()
+        }
+    }
+
+    // TODO: Assign proper weights to situation
+
+    // Utility function for evaluation(): Assigns values to each N,E,S,W direction
+    public int assignValues(PacCell lookDirection) {
+
+        if (lookDirection instanceof WallCell || lookDirection instanceof HouseCell)
+            return -1;
+
+        if (lookDirection instanceof FoodCell || lookDirection instanceof PowerCell)
+            return 1;
+
+        if (lookDirection instanceof GhostCell)
+            return -100;
+
+        // The case where it's empty. 
+        else
+            return 0;
     }
 }
