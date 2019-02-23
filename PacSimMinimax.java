@@ -39,23 +39,7 @@ import pacsim.PacMode;
         1. 
     
  */
-// enum BaseUtility {
-//     FOOD(1.00),
-//     POWER(2.00),
-//     GHOST(-3.00),
-//     GHOST_NEXT(-2.00),
-//     GHOST_FOLLOW(-1.00),
-//     EMPTY(0.00);
 
-//     private final double utitlityScore;
-
-//     Utility(double score){
-//         this.utitlityScore = score;
-//     }
-//     public GetBaseUtility(){
-//         return this.utitlityScore;
-//     }
-// }
 class Game{
     boolean won;
     int moves;
@@ -96,6 +80,10 @@ class State{
             }
         }
         return output;
+    }
+
+    public void beenThereDoneThat(){
+        this.utility = -1.0;
     }
 }
 class Maze {
@@ -148,7 +136,7 @@ class Maze {
    
 public class PacSimMinimax implements PacAction {
 
-    private static boolean debug = true;
+    private static boolean debug = false;
 
     private static final double TOP = (double)Integer.MAX_VALUE;
     private static final double POT = (double)Integer.MIN_VALUE;
@@ -400,10 +388,12 @@ public class PacSimMinimax implements PacAction {
             faces = GoToPacFace(g);
         }
 
-        State output = Maximize(maze.GetState(vertex), depth, faces);
         if(debug){
             System.out.println("Making the decision on which way to go... ");
         }
+
+        State output = Maximize(maze.GetState(vertex), depth, faces);
+        // output.beenThereDoneThat();
         return output.vertex;
     }
 
@@ -468,17 +458,18 @@ public class PacSimMinimax implements PacAction {
         if( pc == null ) return null;
 
         // initiallizing the food and power pellets arrays
-        if(firstAction){
-            firstAction = false;
+        // if(firstAction){
+        //     firstAction = false;
 
-            if(debug){
-                System.out.println("First action: before maze");
-            }
-            InitializeMaze(pc, grid);
-            if(debug){
-                System.out.println(maze.toString());
-            }
-        }
+        //     if(debug){
+        //         System.out.println("First action: before maze");
+        //     }
+        //     InitializeMaze(pc, grid);
+        //     if(debug){
+        //         System.out.println(maze.toString());
+        //     }
+        // }
+        InitializeMaze(pc, grid);
         if(debug){
             System.out.println("Stranger Danger!");
         }
