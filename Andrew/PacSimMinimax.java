@@ -21,7 +21,6 @@ public class PacSimMinimax implements PacAction {
 
 	int inputDepth;
 
-
 	public PacSimMinimax(int depth, String fname, int te, int gran, int max) {
 
 		// We'll use this for look ahead distance
@@ -82,7 +81,7 @@ public class PacSimMinimax implements PacAction {
 
 
         // Testing function
-        evaluation(grid, pc, inputDepth);
+        newFace = directionAnalysis(grid, pc, inputDepth, newFace);
    
 
 		return newFace;
@@ -90,10 +89,9 @@ public class PacSimMinimax implements PacAction {
 
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	//			METHODS
+	//					METHODS
 
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 
     // Method returns integer distance of closest ghost
     public int closestGhost(PacCell[][] grid, PacmanCell pc) {
@@ -131,7 +129,7 @@ public class PacSimMinimax implements PacAction {
 
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    //			UNDER CONSTRUCTION
+    //					UNDER CONSTRUCTION
 
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -139,81 +137,95 @@ public class PacSimMinimax implements PacAction {
 
 
     // Evaluate function for PacMan locations during each action() update. 
-    public void evaluation(PacCell[][] grid, PacmanCell pc, int depth) {
+    public PacFace directionAnalysis(PacCell[][] grid, PacmanCell pc, int depth, PacFace newFace) {
 
     	// Set-up temp PacCell with PacMan's current location
     	int tempY = pc.getY();
     	int tempX = pc.getX();
-
-    	// Temps for functionality
-    	int tempDepth = depth;
-    	
-
-        while (tempDepth != 0) {
-
-            // Reset for each pass
-            ArrayList<Integer> directionValue = new ArrayList<Integer>();
-
-            // Evaluate: N,E,S,W
-
-            // Looking north
-            PacCell lookNorth = grid[tempX - tempDepth][tempY];
-            // Add north value
-            int north = assignValues(lookNorth);
-            directionValue.add(north);
-            
-
-            // Looking east
-            PacCell lookEast = grid[tempX][tempY + tempDepth];
-            // Add east value
-            int east = assignValues(lookEast);
-            directionValue.add(east);
-         
-            // Looking south
-            PacCell lookSouth = grid[tempX + tempDepth][tempY];
-             // Add south value
-            int south = assignValues(lookSouth);
-            directionValue.add(south);
-
         
-            // Looking west
-            PacCell lookWest = grid[tempX][tempY - tempDepth];
-            // Add west value
-            int west = assignValues(lookWest);
-            directionValue.add(west);
+        // Our array to pass in and get our minimax results
+        int[] directionValues = new int[4];
 
+        // Set-up proper indices for testing
+        int northIndex = tempY - depth;
+        int eastIndex = tempX + depth;
+        int southIndex = tempY + depth;
+        int westIndex = tempX - depth;
 
-            // Update: Get gext level depth 
-            tempDepth--;
+        PacCell north = grid[tempX][northIndex];
+        int northResult = assignValues(north);
+        directionValues[0] = northResult;
 
-            for (int value : directionValue) {
-                System.out.println("This value is " + value);
-            }
-            System.out.println();
+        PacCell east = grid[eastIndex][tempY];
+        int eastResult = assignValues(east);
+        directionValues[1] = eastResult;
 
-            // TODO: Do something or pass ArrayList into miniMax()
-        }
+        PacCell south = grid[tempX][southIndex];
+        int southResult = assignValues(south);
+        directionValues[2] = southResult;
+
+        PacCell west = grid[westIndex][tempY];
+        int westResult = assignValues(west);
+        directionValues[3] = westResult;
+
+        // ********TODO: Update results from minimac to face direction based on index. 
+
+        // TESTING BEWARE:
+        int n = directionValues.length;
+        int h = log2(n);
+        int i = minimax(0, 0, true, directionValues, h);
+
+        if (i == 0)
+            newFace = newFace.N;
+        if (i == 1)
+            newFace = newFace.E;
+        if (i == 2)
+            newFace = newFace.S;
+        if (i == 3)
+            newFace = newFace.W;
+        return newFace;
     }
 
-    // TODO: Assign proper weights to situation
+    // TODO: Mess with proper weights to assign values. 
+    // Assigns values to each N,E,S,W direction
+    public int assignValues(PacCell currentCell) {
 
-    // Utility function for evaluation(): Assigns values to each N,E,S,W direction
-    public int assignValues(PacCell lookDirection) {
+        // Value of cell w/ wall or house
+        if (currentCell instanceof WallCell || currentCell instanceof HouseCell)
+            return -1000;
 
-        // Account for walls and house cells for the same value - You shall not pass!
-        if (lookDirection instanceof WallCell || lookDirection instanceof HouseCell)
-            return -1;
+        // Value of a cell w/ food or power pellet
+        if (currentCell instanceof FoodCell || currentCell instanceof PowerCell)
+            return 10;
 
-        // Account for food and power as the same weight
-        if (lookDirection instanceof FoodCell || lookDirection instanceof PowerCell)
-            return 1;
-
-        // Stranger danger!
-        if (lookDirection instanceof GhostCell)
+        // Value of cells w/ a ghost - Worst of all values
+        if (currentCell instanceof GhostCell)
             return -100;
 
-        // The case where it's and empty cell. 
+        // If empty cell
         else
-            return 0;
+            return 1;
+    }
+
+    // Utility function for minimax()
+    static int log2(int n) {
+        return (n == 1) ? 0 : 1 + log2(n/2);
+    }
+
+    // Since our index is the indicator for N, E, S, W return our index on base case. 
+    static int minimax(int depth, int index, boolean isMax, int scores[], int h) {
+
+        // Base case
+        if (depth == h)
+            return index;
+
+        if (isMax) {
+            return Math.max(minimax(depth + 1, index * 2, false, scores, h),
+                minimax(depth + 1, index * 2 + 1, false, scores, h));
+        }
+
+        else 
+            return Math.min(minimax(depth + 1, index * 2, true, scores, h),
+                minimax(depth + 1 , index * 2 + 1, true, scores, h));
     }
 }
