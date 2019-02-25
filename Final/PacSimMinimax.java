@@ -57,7 +57,37 @@
     +---+---+---+
         | S |
         +---+
-*/
++----------------+
+| Seudo-Minimax  |
++----------------+
+minimax(pacmanLocation, ghost1Location, ghost2Location, turn) {
+
+  if (turn == SEARCH_DEPTH) {
+    am I touching a ghost? return PointScore(reallyNegative)
+    add points for being close to food (value += 1/nearestFood.distance)
+    subtract points for being close to ghosts (value -= ghostDistance)
+    return PointScore(value)
+  }
+  else {
+    List PossibleMaxMoves;
+    for (each valid pacman direction) {
+      movePacman;
+      List PossibleMinMoves;
+      for (each valid ghost direction for each ghost) {
+        moveGhost;
+        move = minimax(newPacmanLocation, newGhostLocations, turn++);
+        PossibleMinMoves.add(move);
+      }
+
+      minMove = findMinMove(PossibleMinMoves);
+      PossibleMaxMoves.add(minMove);
+    }
+
+    maxMove = findMaxMove(PossibleMaxMoves);
+    return maxMove;
+}
+
+        */
 
 import java.io.*;
 import java.awt.Point;
@@ -65,127 +95,271 @@ import java.util.ArrayList;
 import java.util.List;
 import pacsim.*;
 
+class Move{
+    public Point point;
+    public int score;
+
+    public Move(Point p, int s){
+        this.point = p;
+        this.score = s;
+    }
+}
+
 public class PacSimMinimax implements PacAction {
     // General variables
-    private static boolean debug = true;
+    private static final Integer TOP = Integer.MAX_VALUE;
+    private static final Integer POT = Integer.MIN_VALUE;
+    private static final Integer FOOD = 10;
+    private static final Integer GHOST = -100;
+    private static final Integer SCARE = 2;
+    private static final Integer MIN_DEPTH = 4;
+    private static final Integer EMPTY = 0;
 
+    private static boolean debug = true;
+    private static int depth;
     private PacMode pacMode;
+    private List<Point> ghostLocations;
 
     private List<Point> path;
     private int simTime;
 
-    // TODO: Assign proper weights to situation
+ 
+    public Point getPaco(PacmanCell pc) {
 
+        int x  = pc.getX();
+        int y = pc.getY();
+
+        Point pacMan = new Point(x,y);
+
+        return pacMan;
+    }
+
+    public Point getLoka(PacCell[][] grid) {
+        for (Point ghost : ghostLocations) {
+            int x = ghost.x;
+            int y = ghost.y;
+
+            if (grid[x][y] instanceof BlinkyCell)
+                return ghost;
+        } 
+        return null;
+    }
+
+    public Point getInka(PacCell[][] grid) {
+        for (Point ghost : ghostLocations) {
+            int x = ghost.x;
+            int y = ghost.y;
+            if (grid[x][y] instanceof BlinkyCell)
+                return ghost;
+        } 
+        return null;
+    }
     // Assigns values to each N,E,S,W direction
-    public int assignValues(PacCell currentCell) {
+    public int assignValues(PacCell currentCell, PacCell[][] grid, boolean isGhost) {
 
-        // Value of cell w/ wall or house
-        if (currentCell instanceof WallCell || currentCell instanceof HouseCell)
+        try {
+            // Value of cell w/ wall or house
+            if (currentCell instanceof WallCell || currentCell instanceof HouseCell)
+                return GHOST;
+    
+            // Value of cells w/ a ghost
+            if (currentCell instanceof GhostCell || isGhost)
+                return GHOST;
+    
+            // Value of a cell w/ food or power pellet
+            if (currentCell instanceof FoodCell || currentCell instanceof PowerCell)
+                return FOOD;
+    
+            // If nothing specific, then this is empty
+            else{
+                int score = FOOD;
+                int distanceToFood = PacUtils.manhattanDistance(currentCell.getLoc(),
+                    PacUtils.nearestFood(currentCell.getLoc(), grid));
+                score = score/distanceToFood;
+    
+                int distanceToGhost = PacUtils.manhattanDistance(currentCell.getLoc(),
+                    PacUtils.nearestGhost(currentCell.getLoc(), grid).getLoc());
+    
+                score = score + GHOST/distanceToGhost;
+    
+                return score;
+            }            
+            
+        } catch (Exception e) {
             return 0;
+        }
+    }
 
-        // Value of a cell w/ food or power pellet
-        if (currentCell instanceof FoodCell || currentCell instanceof PowerCell)
-            return 10;
-
-        // Value of cells w/ a ghost
-        if (currentCell instanceof GhostCell)
-            return -100;
-
-        // If out of bounds or off map 
-        else
-            return 0;
+    public PacCell getPacCell(PacCell[][] grid, Point p){
+        PacCell output = null;
+        for(PacCell[] row : grid){
+            for(PacCell col : row){
+                if(p.getX() == col.getX() && p.getY() == col.getY()){
+                    return col;
+                }
+            }
+        }
+        return output;
     }
 
     // Evaluate function for PacMan locations during each action() update. 
-    public Point directionAnalysis(PacCell[][] grid, PacmanCell pc, int depth) {
+    // public Point directionAnalysis(PacCell[][] grid, PacmanCell pc, int depth) {
 
-        // Let the index 0...3 represent N, E, S, W ordering.
-        int[]scores = new int[4];
+    //     // Let the index 0...3 represent N, E, S, W ordering.
+    //     int[]scores = new int[4];
 
-        // Set-up temp PacCell with PacMan's current location
-        int tempY = pc.getY();
-        int tempX = pc.getX();
+    //     // Set-up temp PacCell with PacMan's current location
+    //     int tempY = pc.getY();
+    //     int tempX = pc.getX();
     
-        // Set-up proper indices for testing
-        int northIndex = tempY - depth;
-        int eastIndex = tempX + depth;
-        int southIndex = tempY + depth;
-        int westIndex = tempX - depth;
+    //     // Set-up proper indices for testing
+    //     int northIndex = tempY - depth;
+    //     int eastIndex = tempX + depth;
+    //     int southIndex = tempY + depth;
+    //     int westIndex = tempX - depth;
 
-        PacCell north = grid[tempX][northIndex];
-        int northResult = assignValues(north);
-        scores[0] = northResult;
+    //     PacCell north = grid[tempX][northIndex];
+    //     int northResult = assignValues(north);
+    //     scores[0] = northResult;
 
-        PacCell east = grid[eastIndex][tempY];
-        int eastResult = assignValues(east);
-        scores[1] = eastResult;
+    //     PacCell east = grid[eastIndex][tempY];
+    //     int eastResult = assignValues(east);
+    //     scores[1] = eastResult;
 
-        PacCell south = grid[tempX][southIndex];
-        int southResult = assignValues(south);
-        scores[2] = southResult;
+    //     PacCell south = grid[tempX][southIndex];
+    //     int southResult = assignValues(south);
+    //     scores[2] = southResult;
 
-        PacCell west = grid[westIndex][tempY];
-        int westResult = assignValues(west);
-        scores[3] = westResult;
+    //     PacCell west = grid[westIndex][tempY];
+    //     int westResult = assignValues(west);
+    //     scores[3] = westResult;
 
-        // Set-up for minimax
-        int n = scores.length;
-        int h = log2(n);
+    //     // Set-up for minimax
+    //     int n = scores.length;
+    //     int h = log2(n);
 
-        int miniMaxResult = miniMax(0, 0, true, scores, h);
-        int directionResult = 0;
+    //     int miniMaxResult = miniMax(0, 0, true, scores, h);
+    //     int directionResult = 0;
 
-        // Find if it's N,E,S,W through the matching index value
-        for (int i = 0; i < 4; i++) {
-            if (scores[i] == miniMaxResult) {
-                directionResult = i;
-            }
-        }
+    //     // Find if it's N,E,S,W through the matching index value
+    //     for (int i = 0; i < 4; i++) {
+    //         if (scores[i] == miniMaxResult) {
+    //             directionResult = i;
+    //         }
+    //     }
         
-        // Our resulting point we should pick
-        Point nextStep = null;
+    //     // Our resulting point we should pick
+    //     Point nextStep = null;
 
-        // Going north
-        if (directionResult == 0) {
-            nextStep = new Point(tempX,northIndex);
-        }
-        // Going east
-        else if (directionResult == 1) {
-            nextStep = new Point(eastIndex,tempY);
-        } 
-        // Going south
-        else if (directionResult == 2) {
-            nextStep = new Point(tempX, southIndex);
-        }
-        // Going west
-        else
-            nextStep = new Point(westIndex,tempY);
-        // Point taken using miniMax()
-        return nextStep;
-    }
+    //     // Going north
+    //     if (directionResult == 0) {
+    //         nextStep = new Point(tempX,northIndex);
+    //     }
+    //     // Going east
+    //     else if (directionResult == 1) {
+    //         nextStep = new Point(eastIndex,tempY);
+    //     } 
+    //     // Going south
+    //     else if (directionResult == 2) {
+    //         nextStep = new Point(tempX, southIndex);
+    //     }
+    //     // Going west
+    //     else
+    //         nextStep = new Point(westIndex,tempY);
+    //     // Point taken using miniMax()
+    //     return nextStep;
+    // }
 
     // Utility function for miniMax()
     static int log2(int n) {
         return (n == 1) ? 0 : 1 + log2(n/2);
     }
 
+    // method to confirm if this is a valid PacCell
+    public boolean validPacCell(PacCell[][] grid, Point p){
+        boolean output = false;
+        if(!(grid[p.x][p.y] instanceof WallCell || grid[p.x][p.y] instanceof HouseCell)){
+            output = true;
+        }
+        return output;
+    }
+
+    // Get the immediate steps 
+    public List<Point> immediateRadius(PacCell[][] grid, Point vertex){
+        // Get PacMan's current location
+        int homeY = vertex.y;//ps.point.y;
+        int homeX = vertex.x;//ps.point.x;
+
+        // Set-up proper indices
+        List<Point> cardinal = new ArrayList<Point>();
+        Point north = new Point(homeX, homeY - 1);
+        if(validPacCell(grid, north))
+            cardinal.add(north); 
+
+        Point south = new Point(homeX, homeY + 1);
+        if(validPacCell(grid, south))
+            cardinal.add(south); 
+
+        Point east = new Point(homeX + 1, homeY);
+        if(validPacCell(grid, east))
+            cardinal.add(east); 
+
+
+        Point west = new Point(homeX - 1, homeY);
+        if(validPacCell(grid, west))
+            cardinal.add(west); 
+
+        return cardinal;
+    }
+
+    public Move findMaxMove(List<Move> moves){
+        int max = POT;
+        Move output = null;
+        for(Move m : moves){
+            if(m.score > max){
+                max = m.score;
+                output = m;
+            }
+        }
+        return output;
+    }
+
+    public Move findMinMove(List<Move> moves){
+        int min = TOP;
+        Move output = null;
+        for(Move m : moves){
+            if(m.score < min){
+                min = m.score;
+                output = m;
+            }
+        }
+        return output;
+    }
+
     // Method returns the desired value from PacMan using minimax 
-    static int miniMax(int depth, int index, boolean isMax, int scores[], int h) {
-
-        // Base case
-        if (depth == h) {
-            return scores[index];
+    public Move minimax(PacCell[][] grid, Point paco, Point loka, Point inka, int turn, boolean isGhost){
+        if(turn == depth){
+            return new Move(
+                paco,
+                assignValues(getPacCell(grid, paco), grid, isGhost)
+            );            
         }
+        else{
+            turn++;
+            List<Move> possibleMaxMoves = new ArrayList<Move>();
+            for(Point p : immediateRadius(grid, paco)){
+                List<Move> possibleMinMoves = new ArrayList<Move>(); 
+                for(Point gl : immediateRadius(grid, loka)){
+                    for(Point gi : immediateRadius(grid, inka)){
+                        possibleMinMoves.add(minimax(grid, paco, gl, gi, turn, true));
+                    }
+                    
+                }
+                possibleMaxMoves.add(findMinMove(possibleMinMoves));
+            }
+            return findMaxMove(possibleMaxMoves);
+        }       
 
-        if (isMax) {
-            return Math.max(miniMax(depth + 1, index * 2, false, scores, h), 
-                miniMax(depth + 1, index * 2 + 1, false, scores, h));
-        }
-
-        else {
-            return Math.min(miniMax(depth + 1, index * 2, true, scores, h), 
-                miniMax(depth + 1, index * 2 + 1, true, scores, h));
-        }
     }
     
     // Method returns Escape path
@@ -226,9 +400,9 @@ public class PacSimMinimax implements PacAction {
             idealPath = path;
         }
         else{
-
             // Call minimax to build the ideal path
-            
+            idealPath = BFSPath.getPath(grid, pc.getLoc(),
+                minimax(grid, getPaco(pc), getLoka(grid), getInka(grid), 0, false).point);
         }
 
         return idealPath;
@@ -251,7 +425,7 @@ public class PacSimMinimax implements PacAction {
         Point pacMan = pc.getLoc();
 
         // Get a list of ghost points
-        List<Point> ghostLocations = PacUtils.findGhosts(grid);
+        ghostLocations = PacUtils.findGhosts(grid);
 
         for (Point ghost : ghostLocations) {
             int tempDistance = BFSPath.getPath(grid, ghost, pacMan).size();
@@ -262,7 +436,7 @@ public class PacSimMinimax implements PacAction {
 
         // Get and Set the PacMode
         if(!ghostLocations.isEmpty()){
-            GhostCell spooky = (GhostCell)PacUtils.nearestGhost(ghostLocations.get(0), grid);
+            GhostCell spooky = (GhostCell)PacUtils.nearestGhost(pc.getLoc(), grid);
             pacMode = spooky.getMode();
         }
         else{
