@@ -3,7 +3,7 @@
  * CAP 4630 - Artificial Intelligence
  * College of Engineering and Computer Science
  * University of Central Florida
- * Spring 2019
+ * Spring 2019 
  * @author Andrew Morse   | 3981863 | an501968
  * @author Gustavo Monaco | 3626975 | gu355280
  */
@@ -202,74 +202,6 @@ public class PacSimMinimax implements PacAction {
         return output;
     }
 
-    // Evaluate function for PacMan locations during each action() update. 
-    // public Point directionAnalysis(PacCell[][] grid, PacmanCell pc, int depth) {
-
-    //     // Let the index 0...3 represent N, E, S, W ordering.
-    //     int[]scores = new int[4];
-
-    //     // Set-up temp PacCell with PacMan's current location
-    //     int tempY = pc.getY();
-    //     int tempX = pc.getX();
-    
-    //     // Set-up proper indices for testing
-    //     int northIndex = tempY - depth;
-    //     int eastIndex = tempX + depth;
-    //     int southIndex = tempY + depth;
-    //     int westIndex = tempX - depth;
-
-    //     PacCell north = grid[tempX][northIndex];
-    //     int northResult = assignValues(north);
-    //     scores[0] = northResult;
-
-    //     PacCell east = grid[eastIndex][tempY];
-    //     int eastResult = assignValues(east);
-    //     scores[1] = eastResult;
-
-    //     PacCell south = grid[tempX][southIndex];
-    //     int southResult = assignValues(south);
-    //     scores[2] = southResult;
-
-    //     PacCell west = grid[westIndex][tempY];
-    //     int westResult = assignValues(west);
-    //     scores[3] = westResult;
-
-    //     // Set-up for minimax
-    //     int n = scores.length;
-    //     int h = log2(n);
-
-    //     int miniMaxResult = miniMax(0, 0, true, scores, h);
-    //     int directionResult = 0;
-
-    //     // Find if it's N,E,S,W through the matching index value
-    //     for (int i = 0; i < 4; i++) {
-    //         if (scores[i] == miniMaxResult) {
-    //             directionResult = i;
-    //         }
-    //     }
-        
-    //     // Our resulting point we should pick
-    //     Point nextStep = null;
-
-    //     // Going north
-    //     if (directionResult == 0) {
-    //         nextStep = new Point(tempX,northIndex);
-    //     }
-    //     // Going east
-    //     else if (directionResult == 1) {
-    //         nextStep = new Point(eastIndex,tempY);
-    //     } 
-    //     // Going south
-    //     else if (directionResult == 2) {
-    //         nextStep = new Point(tempX, southIndex);
-    //     }
-    //     // Going west
-    //     else
-    //         nextStep = new Point(westIndex,tempY);
-    //     // Point taken using miniMax()
-    //     return nextStep;
-    // }
-
     // Utility function for miniMax()
     static int log2(int n) {
         return (n == 1) ? 0 : 1 + log2(n/2);
@@ -348,10 +280,11 @@ public class PacSimMinimax implements PacAction {
             turn++;
             List<Move> possibleMaxMoves = new ArrayList<Move>();
             for(Point p : immediateRadius(grid, paco)){
+                possibleMaxMoves.add(new Move(p, assignValues(getPacCell(grid, p), grid, false)));
                 List<Move> possibleMinMoves = new ArrayList<Move>(); 
                 for(Point gl : immediateRadius(grid, loka)){
                     for(Point gi : immediateRadius(grid, inka)){
-                        possibleMinMoves.add(minimax(grid, paco, gl, gi, turn, true));
+                        possibleMinMoves.add(minimax(grid, p, gl, gi, turn, true));
                     }
                     
                 }
@@ -359,7 +292,6 @@ public class PacSimMinimax implements PacAction {
             }
             return findMaxMove(possibleMaxMoves);
         }       
-
     }
     
     // Method returns Escape path
@@ -508,7 +440,7 @@ public class PacSimMinimax implements PacAction {
 
         new PacSimMinimax(depth, fname, te, gr, ml);
 
-        System.out.println("\nAdversarial Search using Minimax by Gus Monaco:");
+        System.out.println("\nAdversarial Search using Minimax by Andrew Morse and Gus Monaco:");
         System.out.println("\n\tGame board   : " + fname);
         System.out.println("\tSearch depth : " + depth + "\n");
         System.out.println(simMessage);
