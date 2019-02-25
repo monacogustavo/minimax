@@ -311,7 +311,9 @@ public class PacSimMinimax implements PacAction {
                     pc.getLoc(), PacUtils.nearestGhost(pc.getLoc(), grid).getLoc()
                 )
             ), pc.getLoc(), grid).getLoc();
-        escapePath = BFSPath.getPath(grid, pc.getLoc(), tgt);
+        if(validPacCell(tgt)){
+            escapePath = BFSPath.getPath(grid, pc.getLoc(), tgt);
+        }       
 
         return escapePath;
     }
