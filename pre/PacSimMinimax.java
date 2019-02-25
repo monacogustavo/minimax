@@ -96,6 +96,7 @@ public class PacSimMinimax implements PacAction {
     private List<Point> path;
     private int simTime;
     private static int depth;
+    private int attackDepth;
     private PacMode pacMode;
     private List<Point> ghostLocations;
 
@@ -219,7 +220,6 @@ public class PacSimMinimax implements PacAction {
         return min;
     }
 
-
     // Method to validate state
     public boolean validState(List<List<Point>> state, Point p){
         for(List<Point> row : state){
@@ -328,6 +328,36 @@ public class PacSimMinimax implements PacAction {
         return output;
     } 
 
+    // Method to find the max        
+    public Point getMaxStep(Point vertex, PacCell[][] grid, List<PointScore> radius){
+        Point output = null;
+        int max = POT;
+        for(PacCell[] row : grid){
+            for(PacCell col : row){
+                if(vertex.getX() == col.getX() && vertex.getY() == col.getY()){
+                    for(PointScore p : radius){
+                        if(
+                            (vertex.getX()+1 == p.point.getX() && vertex.getY() == p.point.getY())
+                        ||  (vertex.getX()-1 == p.point.getX() && vertex.getY() == p.point.getY())
+                        ||  (vertex.getX() == p.point.getX() && vertex.getY()+1 == p.point.getY())
+                        ||  (vertex.getX() == p.point.getX() && vertex.getY()-1 == p.point.getY())){
+                            if(p.score > max){
+                                max = p.score;
+                                output = p.point;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for(int i = 0; i < radius.size(); i++){
+            if(radius.get(i).point.getX() == output.getX() 
+            && radius.get(i).point.getY() == output.getY()){
+                return radius.remove(i).point;
+            }
+        }
+        return output;
+    }                   
     // Method returns Ideal path
     public List<Point> getIdealPath(PacCell[][] grid, PacmanCell pc){
         List<Point> idealPath = new ArrayList();
@@ -338,9 +368,14 @@ public class PacSimMinimax implements PacAction {
         }
         else{
             List<PointScore> radius = getRadius(pc.getLoc());
+            Point next = radius.remove(0).point;
+            for(int i = 0; i < radius.size(); i++){
+                next = getMaxStep(next, grid, radius);
+                idealPath.add(next);
+            }
             // Call minimax to build the ideal path
-            Point tgt = Maximize(radius, radius.get(0), d).point;
-            idealPath = BFSPath.getPath(grid, pc.getLoc(), tgt);
+            // Point tgt = Maximize(radius, radius.get(0), d).point;
+            // idealPath = BFSPath.getPath(grid, pc.getLoc(), tgt);
         }
 
         return idealPath;
@@ -375,10 +410,13 @@ public class PacSimMinimax implements PacAction {
     // Method returns Attak path
     public List<Point> getAttackPath(PacCell[][] grid, PacmanCell pc){
         List<Point> attackPath = new ArrayList();
-        
         // Call minimax to attack!
-        Point tgt = PacUtils.nearestGhost(pc.getLoc(), grid).getLoc();
-        attackPath = BFSPath.getPath(grid, pc.getLoc(), tgt);
+        PacCell cell = PacUtils.nearestGhost(pc.getLoc(), grid);
+        // If the pursuit is going to the house cell, don't
+        if(!(cell instanceof HouseCell)){
+            attackPath = BFSPath.getPath(grid, pc.getLoc(), cell.getLoc());
+        }
+
 
         return attackPath;
     }
