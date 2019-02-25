@@ -119,9 +119,10 @@ public class PacSimMinimax implements PacAction {
     private static int depth;
     private PacMode pacMode;
     private List<Point> ghostLocations;
-
+    private List<Point> invalidLocations;
     private List<Point> path;
     private int simTime;
+    private boolean firstAction;
 
  
     public Point getPaco(PacmanCell pc) {
@@ -158,10 +159,6 @@ public class PacSimMinimax implements PacAction {
     public int assignValues(PacCell currentCell, PacCell[][] grid, boolean isGhost) {
 
         try {
-            // Value of cell w/ wall or house
-            if (currentCell instanceof WallCell || currentCell instanceof HouseCell)
-                return GHOST;
-    
             // Value of cells w/ a ghost
             if (currentCell instanceof GhostCell || isGhost)
                 return GHOST;
@@ -202,18 +199,27 @@ public class PacSimMinimax implements PacAction {
         return output;
     }
 
-    // Utility function for miniMax()
-    static int log2(int n) {
-        return (n == 1) ? 0 : 1 + log2(n/2);
+    // method to confirm if this is a valid PacCell
+    public List<Point> getIvalidPoints(PacCell[][] grid){
+        List<Point> output = new ArrayList<Point>();
+        for(PacCell[] row : grid) {
+            for(PacCell field : row){
+                if(field instanceof WallCell || field instanceof HouseCell){
+                    output.add(field.getLoc());
+                } 
+            }
+        }
+        return output;
     }
 
     // method to confirm if this is a valid PacCell
-    public boolean validPacCell(PacCell[][] grid, Point p){
-        boolean output = false;
-        if(!(grid[p.x][p.y] instanceof WallCell || grid[p.x][p.y] instanceof HouseCell)){
-            output = true;
-        }
-        return output;
+    public boolean validPacCell(Point p){
+        for(Point i : invalidLocations){
+            if(i.getX() == p.getX() && i.getY() == p.getY()){
+                return false;
+            }
+        }        
+        return true;
     }
 
     // Get the immediate steps 
@@ -225,20 +231,20 @@ public class PacSimMinimax implements PacAction {
         // Set-up proper indices
         List<Point> cardinal = new ArrayList<Point>();
         Point north = new Point(homeX, homeY - 1);
-        if(validPacCell(grid, north))
+        if(validPacCell(north))
             cardinal.add(north); 
 
         Point south = new Point(homeX, homeY + 1);
-        if(validPacCell(grid, south))
+        if(validPacCell(south))
             cardinal.add(south); 
 
         Point east = new Point(homeX + 1, homeY);
-        if(validPacCell(grid, east))
+        if(validPacCell(east))
             cardinal.add(east); 
 
 
         Point west = new Point(homeX - 1, homeY);
-        if(validPacCell(grid, west))
+        if(validPacCell(west))
             cardinal.add(west); 
 
         return cardinal;
@@ -378,21 +384,6 @@ public class PacSimMinimax implements PacAction {
         return shortestDistance;
     }
 
-    // Distance of closest food pellet
-    public int closestPellet(PacCell[][] grid, PacmanCell pc) {
-
-        // Initalize point of pacman
-        Point pacMan = pc.getLoc();
-
-        // Initialize point of nearest food pellet
-        Point food = PacUtils.nearestFood(pacMan, grid);
-
-        // Use BFS to account for walls in distance
-        int distance = BFSPath.getPath(grid, food, pacMan).size();
-
-        return distance;
-    }
-
     // Method returns Point to go next
     public static Point nextStep(PacCell[][] grid, PacmanCell pc, List<Point> pathTaken){
         // if current path completed (or just starting out),
@@ -449,6 +440,7 @@ public class PacSimMinimax implements PacAction {
     public void init(){
         simTime = 0;
         path = new ArrayList();
+        firstAction = true;
     }
 
     @Override
@@ -462,22 +454,22 @@ public class PacSimMinimax implements PacAction {
             
         if(PacUtils.numFood(grid) == 0) return null;
 
+        if(firstAction){
+            firstAction = false;
+            invalidLocations = getIvalidPoints(grid);
+        }
+        // Are the spooky-looking Cells close?
         boolean close = (closestGhost(grid, pc) <= 3 ? true : false);
-
+                    
         if(close){
-            // if(debug){System.out.println("[Close = true]");}
-
             if(pacMode == PacMode.FEAR){
-                // if(debug){System.out.println("[ATTACK]");}
                 path = getAttackPath(grid, pc);
             }
             else{
-                // if(debug){System.out.println("[ESCAPE]");}
                 path = getEscapePath(grid, pc);
             }
         }
         else{
-            // if(debug){System.out.println("[Close = false]");}
             path = getIdealPath(grid, pc);
 
             if(path.isEmpty()){
@@ -487,8 +479,6 @@ public class PacSimMinimax implements PacAction {
         }
         Point next = nextStep(grid, pc, path);
         PacFace face = PacUtils.direction( pc.getLoc(), next );
-        // System.out.printf( "%5d : From [ %2d, %2d ] go %s%n", 
-        //     ++simTime, pc.getLoc().x, pc.getLoc().y, face );
         return face;
     }
 }
