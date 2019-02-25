@@ -64,21 +64,6 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 import pacsim.*;
-import pacsim.BFSPath;
-import pacsim.PacAction;
-import pacsim.PacCell;
-import pacsim.PacFace;
-import pacsim.PacSim;
-import pacsim.PacUtils;
-import pacsim.PacmanCell;
-import pacsim.GhostCell;
-import pacsim.WallCell;
-import pacsim.PacMode;
-import pacsim.HouseCell;
-import pacsim.PowerCell;
-import pacsim.FoodCell;
-import pacsim.InkyCell;
-import pacsim.BlinkyCell;
 
 public class PacSimMinimax implements PacAction {
     // General variables
@@ -112,7 +97,10 @@ public class PacSimMinimax implements PacAction {
     }
 
     // Evaluate function for PacMan locations during each action() update. 
-    public void directionAnalysis(PacCell[][] grid, PacmanCell pc, int depth) {
+    public Point directionAnalysis(PacCell[][] grid, PacmanCell pc, int depth) {
+
+        // Let the index 0...3 represent N, E, S, W ordering.
+        int[]scores = new int[4];
 
         // Set-up temp PacCell with PacMan's current location
         int tempY = pc.getY();
@@ -126,22 +114,56 @@ public class PacSimMinimax implements PacAction {
 
         PacCell north = grid[tempX][northIndex];
         int northResult = assignValues(north);
+        scores[0] = northResult;
 
         PacCell east = grid[eastIndex][tempY];
         int eastResult = assignValues(east);
+        scores[1] = eastResult;
 
         PacCell south = grid[tempX][southIndex];
         int southResult = assignValues(south);
+        scores[2] = southResult;
 
         PacCell west = grid[westIndex][tempY];
         int westResult = assignValues(west);
+        scores[3] = westResult;
 
-        System.out.println("North: " + northResult);
-        System.out.println("East: " + eastResult);
-        System.out.println("South: " + southResult);
-        System.out.println("West: " + westResult);
+        // Set-up for minimax
+        int n = scores.length;
+        int h = log2(n);
+
+        int miniMaxResult = miniMax(0, 0, true, scores, h);
+        int directionResult = 0;
+
+        // Find if it's N,E,S,W through the matching index value
+        for (int i = 0; i < 4; i++) {
+            if (scores[i] == miniMaxResult) {
+                directionResult = i;
+            }
+        }
+        
+        // Our resulting point we should pick
+        Point nextStep = null;
+
+        // Going north
+        if (directionResult == 0) {
+            nextStep = new Point(tempX,northIndex);
+        }
+        // Going east
+        else if (directionResult == 1) {
+            nextStep = new Point(eastIndex,tempY);
+        } 
+        // Going south
+        else if (directionResult == 2) {
+            nextStep = new Point(tempX, southIndex);
+        }
+        // Going west
+        else
+            nextStep = new Point(westIndex,tempY);
+        // Point taken using miniMax()
+        return nextStep;
     }
-    
+
     // Utility function for miniMax()
     static int log2(int n) {
         return (n == 1) ? 0 : 1 + log2(n/2);
@@ -192,7 +214,6 @@ public class PacSimMinimax implements PacAction {
             attackPath = BFSPath.getPath(grid, pc.getLoc(), cell.getLoc());
         }
 
-
         return attackPath;
     }
 
@@ -205,6 +226,7 @@ public class PacSimMinimax implements PacAction {
             idealPath = path;
         }
         else{
+
             // Call minimax to build the ideal path
             
         }
