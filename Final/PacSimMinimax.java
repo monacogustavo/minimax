@@ -320,9 +320,9 @@ public class PacSimMinimax implements PacAction {
     public List<Point> getAttackPath(PacCell[][] grid, PacmanCell pc){
         List<Point> attackPath = new ArrayList();
         // Call minimax to attack!
-        PacCell cell = PacUtils.nearestGhost(pc.getLoc(), grid);
+        GhostCell cell = PacUtils.nearestGhost(pc.getLoc(), grid);
         // If the pursuit is going to the house cell, don't
-        if(!(cell instanceof HouseCell)){
+        if(cell.getFearTimer()>2 && validPacCell(cell.getLoc())){
             attackPath = BFSPath.getPath(grid, pc.getLoc(), cell.getLoc());
         }
 
